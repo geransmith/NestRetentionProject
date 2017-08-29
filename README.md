@@ -18,10 +18,10 @@ Used to save Nest data to CSV for historical information
     
     If you have any issues, please post on the GitHub page for this project: <https://github.com/tehspaceg/NestRetentionProject>
 
-# Dependencies (pip install xx):
-python-nest - https://github.com/jkoelker/python-nest
-pytz
-requests
+# Dependencies (pip install xx):  
+python-nest - https://github.com/jkoelker/python-nest  
+pytz  
+requests  
 
 OpenWeatherMap - https://openweathermap.org
 
