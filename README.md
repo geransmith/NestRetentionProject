@@ -23,6 +23,8 @@ python-nest - https://github.com/jkoelker/python-nest
 pytz  
 requests  
 
-OpenWeatherMap - https://openweathermap.org
+# An API token is needed for the following:  
+OpenWeatherMap - https://openweathermap.org  
+Mailgun - https://mailgun.com  
 
 Tested on python 3.5.
