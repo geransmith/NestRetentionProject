@@ -20,6 +20,7 @@ Used to save Nest data to CSV for historical information
 
 # Dependencies:  
 python-nest - https://github.com/jkoelker/python-nest
+
 OpenWeatherMap - https://openweathermap.org
 
 Tested on python 3.5.
