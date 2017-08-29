@@ -35,7 +35,7 @@ import logging
 # Use credentials from the Nest API
 client_id = 'xxxx'
 client_secret = 'xxxx'
-access_token_cache_file = 'nest.json'
+access_token_cache_file = 'nest.json' # Use a full path for this if running with cron
 
 #base mailgun information
 mailgun_key = 'xxxxx' #replace with your mailgun key
@@ -91,7 +91,7 @@ def main(argv):
     
     # Authorize against the Nest API
     napi = nest.Nest(client_id=client_id, client_secret=client_secret, access_token_cache_file=access_token_cache_file)
-    
+
     # Check to see if a pin is required by the Nest authentication, if it is required, look for the pin argument
     if napi.authorization_required:
     # If the pin argument was set, we want to wait and allow a pin to be entered manually
@@ -103,16 +103,12 @@ def main(argv):
                 pin = input("PIN: ")
             napi.request_token(pin)
         else:
-            try:
-                napi.request_token(pin)
-            except:
-                request = requests.post(mailgun_url, auth=('api', mailgun_key), data={
-                'from': mailgun_from,
-                'to': mailgun_recipient,
-                'subject': 'Nest Retention Project PIN requested',
-                'text': 'Created file to stop this script'})
-                logging.exception('Failed in the PIN section')
-            raise
+            request = requests.post(mailgun_url, auth=('api', mailgun_key), data={
+            'from': mailgun_from,
+            'to': mailgun_recipient,
+            'subject': 'Nest Retention Project PIN requested',
+            'text': 'Created file to stop this script'})
+
     for structure in napi.structures:
         print ('Structure %s' % structure.name)
         print ('    Away: %s' % structure.away)
