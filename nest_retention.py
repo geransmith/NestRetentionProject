@@ -20,7 +20,7 @@
 
 # If you have any issues, please post on the GitHub page for this project: <https://github.com/tehspaceg/NestRetentionProject>
 
-# 'nest' for python-nest requirements, 'requests' for mailgun and OpenWeatherMap, 'csv' for writing out to csv format, 'sys' for base operations, 'argparse' for hanging the pin argument, 'os.path' for checking for existing files, 'datetime' and 'pytz' for getting current datetime in UTC format, 'json' for reading OpenWeatherMap data
+# 'nest' for python-nest requirements, 'requests' for mailgun and OpenWeatherMap, 'csv' for writing out to csv format, 'sys' for base operations, 'argparse' for hanging the pin argument, 'os.path' for checking for existing files, 'datetime' and 'pytz' for getting current datetime in UTC format, 'json' for reading OpenWeatherMap data, 'logging' so we can see the exception in the testfile
 import nest
 import requests
 import csv
@@ -30,6 +30,7 @@ import os.path
 import datetime
 import pytz
 import json
+import logging
 
 # Use credentials from the Nest API
 client_id = 'xxxx'
@@ -53,6 +54,11 @@ csv_output = '/path/to/nest_retention/nest_retention_output.csv'
 # Enter path to the test file
 testfile = '/path/to/nest_retention/testfile'
 
+# Logfile path
+logfile = '/path/to/nest_retention/logfile'
+
+logging.basicConfig(level=logging.DEBUG, filename=logfile)
+
 # Exits if the test file exists, the goal being to not spam a bunch of APIs if the Nest PIN is needed
 if os.path.isfile(testfile):
     print('The test file exists, exiting...')
@@ -62,7 +68,7 @@ if os.path.isfile(testfile):
 def main(argv):
     # Handle arguments saying we need a pin
     parser = argparse.ArgumentParser(description='Pass an argument if a PIN is required')
-    parser.add_argument('--pin', action='store_true', dest='pin', help='Set this flag if a PIN needs to be entered')
+    parser.add_argument('--pin', action='store_true', dest='pinarg', help='Set this flag if a PIN needs to be entered')
     args = parser.parse_args()
     
     # Create the csv file if needed
@@ -89,7 +95,7 @@ def main(argv):
     # Check to see if a pin is required by the Nest authentication, if it is required, look for the pin argument
     if napi.authorization_required:
     # If the pin argument was set, we want to wait and allow a pin to be entered manually
-        if args.pin:
+        if args.pinarg:
             print('Go to ' + napi.authorize_url + ' to authorize, then enter PIN below')
             if sys.version_info[0] < 3:
                 pin = raw_input("PIN: ")
@@ -97,21 +103,16 @@ def main(argv):
                 pin = input("PIN: ")
             napi.request_token(pin)
         else:
-            if sys.version_info[0] < 3:
-                file = open(testfile, 'w')
+            try:
+                napi.request_token(pin)
+            except:
                 request = requests.post(mailgun_url, auth=('api', mailgun_key), data={
                 'from': mailgun_from,
                 'to': mailgun_recipient,
                 'subject': 'Nest Retention Project PIN requested',
                 'text': 'Created file to stop this script'})
-            else:
-                file = open(testfile, 'w')
-                request = requests.post(mailgun_url, auth=('api', mailgun_key), data={
-                'from': mailgun_from,
-                'to': mailgun_recipient,
-                'subject': 'Nest Retention Project PIN requested',
-                'text': 'Created file to stop this script'})
-
+                logging.exception('Failed in the PIN section')
+            raise
     for structure in napi.structures:
         print ('Structure %s' % structure.name)
         print ('    Away: %s' % structure.away)
@@ -147,7 +148,7 @@ def main(argv):
             # Write data to csv file
             with open(csv_output, 'a', newline='') as f:
                 writer=csv.writer(f)
-                writer.writerow([iso_utc_now, device.name, device.where, device.mode, device.hvac_state, device.temperature, device.target, owm_temperature    
+                writer.writerow([iso_utc_now, device.name, device.where, device.mode, device.hvac_state, device.temperature, device.target, owm_temperature])
 
 try:
     if __name__ == "__main__":
