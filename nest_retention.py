@@ -48,6 +48,9 @@ owm_key = 'xxx'
 owm_cityid = 'xxx' # Get this from http://openweathermap.org/find, then get the City ID from the URL
 owm_units = 'imperial' # Set to imperial for Fahrenheit, metric for Celsius
 
+# Timezone Info
+tz = pytz.timezone('America/Los_Angeles') # replace with your timezone in pytz format
+
 # Enter path to to the csv output file
 csv_output = '/path/to/nest_retention/nest_retention_output.csv'
 
@@ -70,16 +73,16 @@ def main(argv):
     parser = argparse.ArgumentParser(description='Pass an argument if a PIN is required')
     parser.add_argument('--pin', action='store_true', dest='pinarg', help='Set this flag if a PIN needs to be entered')
     args = parser.parse_args()
-    
+
     # Create the csv file if needed
     if not os.path.isfile(csv_output):
         with open(csv_output,'w') as f:
             f.write('Date,Device Name,Device Location,Mode,HVAC State,Temperature,Target Temperature,Outside Temperature\n')
-    
-    # Get the current datetime in ISO format
-    utc_now = pytz.utc.localize(datetime.datetime.utcnow())
-    iso_utc_now = utc_now.isoformat()
-    
+
+    # Get the current datetime in YYYY-MM-DD HH:MM:SS format in the timezone specified above
+    now = datetime.datetime.now(tz)
+    str_now = now.strftime("%Y-%m-%d %H:%M:%S")
+
     # Get the current weather information from OpenWeatherMap
     payload = {'id': owm_cityid, 'units': owm_units, 'appid': owm_key}
     openweathermap = requests.get('http://api.openweathermap.org/data/2.5/weather', params=payload)
@@ -88,7 +91,7 @@ def main(argv):
         owm_temperature = owm_decoded['main']['temp']
     else:
         bad_r.raise_for_status()
-    
+
     # Authorize against the Nest API
     napi = nest.Nest(client_id=client_id, client_secret=client_secret, access_token_cache_file=access_token_cache_file)
 
@@ -108,7 +111,6 @@ def main(argv):
             'to': mailgun_recipient,
             'subject': 'Nest Retention Project PIN requested',
             'text': 'Created file to stop this script'})
-
     for structure in napi.structures:
         print ('Structure %s' % structure.name)
         print ('    Away: %s' % structure.away)
@@ -140,11 +142,11 @@ def main(argv):
             print ('            Eco Low    : %0.1fC' % device.eco_temperature.low)
             print ('            hvac_emer_heat_state  : %s' % device.is_using_emergency_heat)
             print ('            online                : %s' % device.online)
-            
+
             # Write data to csv file
             with open(csv_output, 'a', newline='') as f:
                 writer=csv.writer(f)
-                writer.writerow([iso_utc_now, device.name, device.where, device.mode, device.hvac_state, device.temperature, device.target, owm_temperature])
+                writer.writerow([str_now, device.name, device.where, device.mode, device.hvac_state, device.temperature, device.target, owm_temperature])
 
 try:
     if __name__ == "__main__":
